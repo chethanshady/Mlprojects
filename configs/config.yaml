@@ -1,0 +1,75 @@
+# ==============================================================================
+# Production Fraud Detection System Configuration
+# ==============================================================================
+
+# Data Paths Configuration
+data:
+  raw_path: "data/raw"
+  processed_path: "data/processed"
+  artifacts_path: "artifacts"
+  target_column: "Class"
+  train_file: "data/processed/train.parquet"
+  test_file: "data/processed/test.parquet"
+  val_file: "data/processed/val.parquet"
+
+# Training Split & Random Seed Parameters
+training:
+  test_size: 0.2
+  val_size: 0.1
+  random_state: 42
+  stratify: true
+  n_splits_cv: 5
+
+# Model Hyperparameters
+models:
+  # Supervised Classifier: XGBoost
+  xgboost:
+    n_estimators: 300
+    max_depth: 6
+    learning_rate: 0.05
+    scale_pos_weight: 580
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 5
+    gamma: 2
+    reg_alpha: 0.5
+    reg_lambda: 1.0
+    random_state: 42
+    n_jobs: -1
+    eval_metric: "aucpr"
+
+  # Unsupervised Anomaly Detection: Isolation Forest
+  isolation_forest:
+    n_estimators: 200
+    contamination: 0.002
+    max_samples: 0.8
+    random_state: 42
+    n_jobs: -1
+
+  # Hybrid Ensemble Configuration
+  ensemble:
+    weights:
+      xgboost: 0.7
+      isolation_forest: 0.3
+
+# Fraud Probability Risk Level Thresholds
+thresholds:
+  low: 0.3
+  medium: 0.6
+  high: 0.85
+  critical: 0.95
+
+# FastAPI Inference Server Settings
+api:
+  host: "0.0.0.0"
+  port: 8000
+  title: "Fraud Detection Inference API"
+  version: "1.0.0"
+  workers: 1
+  reload: false
+
+# Streamlit Monitoring Dashboard Settings
+dashboard:
+  host: "0.0.0.0"
+  port: 8501
+  title: "Fraud Detection Real-Time Dashboard"

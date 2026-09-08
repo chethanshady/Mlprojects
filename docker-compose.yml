@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  # ============================================================================
+  # 🚀 FastAPI Real-Time Inference Microservice
+  # ============================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: fraud-detection-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+      - APP_ENV=production
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./artifacts:/app/artifacts:ro
+      - ./configs:/app/configs:ro
+    networks:
+      - fraud-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ============================================================================
+  # 📊 Streamlit Real-Time Monitoring & Simulation Dashboard
+  # ============================================================================
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: fraud-detection-dashboard
+    restart: unless-stopped
+    command: ["streamlit", "run", "dashboard/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports:
+      - "8501:8501"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+      - API_URL=http://api:8000
+      - ARTIFACTS_DIR=/app/artifacts
+    volumes:
+      - ./artifacts:/app/artifacts:ro
+      - ./data/raw:/app/data/raw:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - fraud-network
+
+# ==============================================================================
+# Isolated Bridge Network
+# ==============================================================================
+networks:
+  fraud-network:
+    driver: bridge
